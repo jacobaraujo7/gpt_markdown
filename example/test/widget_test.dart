@@ -15,9 +15,10 @@ void main() {
     // The markdown body is rendered.
     expect(find.byType(GptMarkdown), findsOneWidget);
 
-    // The leading YAML frontmatter is parsed and shown via the
-    // FrontmatterCard rather than rendered as raw markdown.
-    expect(find.text('Frontmatter'), findsOneWidget);
-    expect(find.text('GPT Markdown'), findsWidgets);
+    // The leading YAML frontmatter is parsed and shown via the built-in
+    // frontmatter table rather than rendered as raw markdown.
+    expect(find.byType(GptMarkdownFrontmatterTable), findsOneWidget);
+    expect(find.text('name'), findsOneWidget);
+    expect(find.textContaining('GPT Markdown'), findsWidgets);
   });
 }

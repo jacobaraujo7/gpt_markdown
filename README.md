@@ -145,9 +145,10 @@ A document that begins with a `---` fenced block is treated as having **YAML
 frontmatter** — the metadata convention used by static site generators and AI
 agent files such as `agent.md` and `SKILL.md`.
 
-gpt_markdown parses the block, removes it from the rendered body and hands the
-result to your `frontmatterBuilder`. If you don't supply a builder, the
-frontmatter is simply hidden (it is never rendered as broken markdown).
+gpt_markdown parses the block and removes it from the rendered body. **By
+default it renders the frontmatter as a table** (a `GptMarkdownFrontmatterTable`)
+above the content — just like editors show `agent.md` / `SKILL.md` metadata — so
+it works out of the box:
 
 ```dart
 GptMarkdown(
@@ -155,16 +156,23 @@ GptMarkdown(
 ---
 name: code-reviewer
 description: Reviews diffs for bugs and style issues.
-tags:
-  - review
-  - quality
-tools: [Read, Grep, Bash]
+tools: Read, Grep, Bash
+model: sonnet
 ---
 
 # Code Reviewer
 
 Body content here...
 ''',
+)
+```
+
+Want a custom look? Pass a `frontmatterBuilder` (return `const
+SizedBox.shrink()` to hide the frontmatter entirely):
+
+```dart
+GptMarkdown(
+  agentMarkdown,
   frontmatterBuilder: (context, frontmatter) {
     return Card(
       child: ListTile(

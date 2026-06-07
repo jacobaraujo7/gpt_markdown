@@ -391,6 +391,92 @@ class GptMarkdownFrontmatter {
   }
 }
 
+/// The default renderer for [GptMarkdownFrontmatter] — a bordered two-column
+/// table of `key | value` rows, similar to how editors such as VS Code display
+/// the frontmatter of `agent.md` / `SKILL.md` files.
+///
+/// [GptMarkdown] uses this automatically whenever a document has frontmatter
+/// and no custom `frontmatterBuilder` is supplied. You can also use it directly
+/// from a `frontmatterBuilder`:
+///
+/// ```dart
+/// GptMarkdown(
+///   agentMarkdown,
+///   frontmatterBuilder: (context, frontmatter) =>
+///       GptMarkdownFrontmatterTable(frontmatter: frontmatter),
+/// )
+/// ```
+class GptMarkdownFrontmatterTable extends StatelessWidget {
+  const GptMarkdownFrontmatterTable({
+    super.key,
+    required this.frontmatter,
+    this.style,
+  });
+
+  /// The parsed frontmatter to display.
+  final GptMarkdownFrontmatter frontmatter;
+
+  /// Base text style for the table cells. Keys are rendered bold.
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = frontmatter.fields.entries.toList();
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final gptTheme = GptMarkdownTheme.of(context);
+    final baseStyle = style ?? DefaultTextStyle.of(context).style;
+    final keyStyle = baseStyle.copyWith(fontWeight: FontWeight.bold);
+    final borderColor = gptTheme.hrLineColor;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Table(
+        border: TableBorder.all(color: borderColor, width: 1),
+        columnWidths: const {
+          0: IntrinsicColumnWidth(),
+          1: FlexColumnWidth(),
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: [
+          for (final entry in entries)
+            TableRow(
+              children: [
+                _cell(
+                  entry.key,
+                  keyStyle,
+                  background: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.4),
+                ),
+                _cell(_stringify(entry.value), baseStyle),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cell(String text, TextStyle textStyle, {Color? background}) {
+    return Container(
+      color: background,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Text(text, style: textStyle),
+    );
+  }
+
+  static String _stringify(dynamic value) {
+    if (value == null) return '';
+    if (value is List) return value.map(_stringify).join(', ');
+    if (value is Map) {
+      return value.entries
+          .map((e) => '${e.key}: ${_stringify(e.value)}')
+          .join(', ');
+    }
+    return value.toString();
+  }
+}
+
 /// A significant frontmatter line: its indentation and trimmed content.
 class _FmLine {
   const _FmLine(this.indent, this.content);

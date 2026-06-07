@@ -107,8 +107,9 @@ class GptMarkdown extends StatelessWidget {
   ///
   /// When the markdown starts with a `---` fenced frontmatter block, it is
   /// parsed with [GptMarkdownFrontmatter] and removed from the rendered body.
-  /// If [frontmatterBuilder] is provided, its widget is shown above the body;
-  /// otherwise the frontmatter is hidden.
+  /// By default the parsed frontmatter is rendered above the body as a
+  /// [GptMarkdownFrontmatterTable]. Provide [frontmatterBuilder] to render it
+  /// your own way instead — return `const SizedBox.shrink()` to hide it.
   ///
   /// ```dart
   /// GptMarkdown(
@@ -235,12 +236,21 @@ class GptMarkdown extends StatelessWidget {
       ),
     );
 
-    final frontmatterBuilder = this.frontmatterBuilder;
-    if (frontmatter != null && frontmatterBuilder != null) {
+    if (frontmatter != null) {
+      // Use the custom builder when provided, otherwise fall back to the
+      // built-in table renderer so frontmatter is visible out of the box.
+      final frontmatterBuilder = this.frontmatterBuilder;
+      final header =
+          frontmatterBuilder != null
+              ? frontmatterBuilder(context, frontmatter)
+              : GptMarkdownFrontmatterTable(
+                frontmatter: frontmatter,
+                style: style,
+              );
       child = Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [frontmatterBuilder(context, frontmatter), child],
+        children: [header, child],
       );
     }
     return child;

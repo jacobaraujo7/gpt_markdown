@@ -1,3 +1,9 @@
+## 1.2.1
+
+* Frontmatter is now **rendered as a table by default**. When a document has frontmatter and no `frontmatterBuilder` is supplied, `GptMarkdown` shows the parsed metadata as a `key | value` table (the new public `GptMarkdownFrontmatterTable` widget) above the body — similar to how editors display `agent.md` / `SKILL.md` metadata. Previously it was hidden unless a builder was provided.
+* To hide the frontmatter, return `const SizedBox.shrink()` from `frontmatterBuilder`.
+* Updated the example app (`main.dart` now relies on the default table) and docs accordingly.
+
 ## 1.2.0
 
 * Added **YAML frontmatter** support. A document beginning with a `---` fenced block is now parsed as frontmatter and removed from the rendered body instead of being rendered as a stray horizontal rule plus raw text.

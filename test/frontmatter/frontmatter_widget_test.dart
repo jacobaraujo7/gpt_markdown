@@ -1,124 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gpt_markdown/custom_widgets/custom_divider.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
-
-import '../utils/test_helpers.dart';
-
-// A document whose body is a single paragraph keeps the serialized output
-// predictable (headings serialize as LATEX in the test serializer).
-const _stripDoc =
-    '---\n'
-    'title: Secret Meta\n'
-    'description: Reviews diffs for bugs.\n'
-    'tags: [alpha, beta]\n'
-    '---\n'
-    'Visible paragraph.';
 
 const _agentMd = '''
 ---
 name: code-reviewer
 description: Reviews diffs for bugs.
-tags:
-  - review
-  - quality
+tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
-# Code Reviewer
-
-Body text here.
+Body paragraph.
 ''';
+
+Future<void> _pump(WidgetTester tester, Widget child) async {
+  await tester.pumpWidget(
+    MaterialApp(home: Scaffold(body: SingleChildScrollView(child: child))),
+  );
+  await tester.pumpAndSettle();
+}
 
 void main() {
   group('Frontmatter rendering', () {
-    testWidgets('strips frontmatter from the rendered body', (tester) async {
-      await pumpMarkdown(tester, _stripDoc);
-      final output = getSerializedOutput(tester);
+    testWidgets('renders frontmatter as a table by default', (tester) async {
+      await _pump(tester, GptMarkdown(_agentMd));
 
-      // The body still renders...
-      expect(output, 'TEXT("Visible paragraph.")');
+      // The default renderer is a table of key/value rows.
+      expect(find.byType(GptMarkdownFrontmatterTable), findsOneWidget);
+      expect(find.byType(Table), findsOneWidget);
 
-      // ...and none of the frontmatter leaks into the rendered output.
-      expect(output, isNot(contains('Secret Meta')));
-      expect(output, isNot(contains('description')));
-      expect(output, isNot(contains('alpha')));
-      expect(output, isNot(contains('beta')));
+      // Keys and values are visible in the table.
+      expect(find.text('name'), findsOneWidget);
+      expect(find.text('code-reviewer'), findsOneWidget);
+      expect(find.text('tools'), findsOneWidget);
+      expect(find.text('Read, Grep, Glob, Bash'), findsOneWidget);
+      expect(find.text('model'), findsOneWidget);
+
+      // The body still renders.
+      expect(find.textContaining('Body paragraph.'), findsOneWidget);
     });
 
-    testWidgets('does not render a stray HR for the fences', (tester) async {
-      await pumpMarkdown(tester, _stripDoc);
-      final output = getSerializedOutput(tester);
-      // If the fences leaked through they would render as horizontal rules.
-      expect(output, isNot(contains('HR')));
+    testWidgets('does not re-render frontmatter in the markdown body', (
+      tester,
+    ) async {
+      await _pump(tester, GptMarkdown(_agentMd));
+      // If the fences leaked into the body, the raw YAML line would render.
+      expect(find.textContaining('name: code-reviewer'), findsNothing);
+      // The fences must not become horizontal rules.
+      expect(find.byType(CustomDivider), findsNothing);
     });
 
-    testWidgets('renders frontmatterBuilder output above the body', (
+    testWidgets('frontmatterBuilder overrides the default table', (
       tester,
     ) async {
       GptMarkdownFrontmatter? captured;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: GptMarkdown(
-                _agentMd,
-                frontmatterBuilder: (context, frontmatter) {
-                  captured = frontmatter;
-                  return Text('AGENT: ${frontmatter.string('name')}');
-                },
-              ),
-            ),
-          ),
+      await _pump(
+        tester,
+        GptMarkdown(
+          _agentMd,
+          frontmatterBuilder: (context, frontmatter) {
+            captured = frontmatter;
+            return Text('AGENT: ${frontmatter.string('name')}');
+          },
         ),
       );
-      await tester.pumpAndSettle();
 
       // The builder received the parsed frontmatter.
       expect(captured, isNotNull);
       expect(captured!.string('name'), 'code-reviewer');
-      expect(captured!.stringList('tags'), ['review', 'quality']);
 
-      // The builder's widget is in the tree.
+      // The custom widget replaces the default table.
       expect(find.text('AGENT: code-reviewer'), findsOneWidget);
+      expect(find.byType(GptMarkdownFrontmatterTable), findsNothing);
     });
 
-    testWidgets('does not call builder when there is no frontmatter', (
+    testWidgets('builder can hide the frontmatter', (tester) async {
+      await _pump(
+        tester,
+        GptMarkdown(
+          _agentMd,
+          frontmatterBuilder: (context, frontmatter) =>
+              const SizedBox.shrink(),
+        ),
+      );
+      expect(find.byType(GptMarkdownFrontmatterTable), findsNothing);
+      expect(find.text('code-reviewer'), findsNothing);
+      expect(find.textContaining('Body paragraph.'), findsOneWidget);
+    });
+
+    testWidgets('no frontmatter → no table, builder not called', (
       tester,
     ) async {
       var called = false;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GptMarkdown(
-              'Plain paragraph.',
-              frontmatterBuilder: (context, frontmatter) {
-                called = true;
-                return const Text('SHOULD NOT APPEAR');
-              },
-            ),
-          ),
+      await _pump(
+        tester,
+        GptMarkdown(
+          'Plain paragraph.',
+          frontmatterBuilder: (context, frontmatter) {
+            called = true;
+            return const Text('SHOULD NOT APPEAR');
+          },
         ),
       );
-      await tester.pumpAndSettle();
-
       expect(called, isFalse);
+      expect(find.byType(GptMarkdownFrontmatterTable), findsNothing);
       expect(find.text('SHOULD NOT APPEAR'), findsNothing);
-    });
-
-    testWidgets('hides frontmatter when no builder is provided', (
-      tester,
-    ) async {
-      await pumpMarkdown(tester, _stripDoc);
-      final output = getSerializedOutput(tester);
-      // Still just the body — the frontmatter is silently dropped.
-      expect(output, 'TEXT("Visible paragraph.")');
-    });
-
-    testWidgets('document without frontmatter renders unchanged', (
-      tester,
-    ) async {
-      await pumpMarkdown(tester, 'Some **bold** text.');
-      final output = getSerializedOutput(tester);
-      expect(output, contains('TEXT("bold")[bold]'));
+      expect(find.textContaining('Plain paragraph.'), findsOneWidget);
     });
   });
 }

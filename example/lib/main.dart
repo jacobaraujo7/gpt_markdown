@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 
-import 'frontmatter_card.dart';
-
 /// Minimal example for gpt_markdown — Markdown & LaTeX renderer for Flutter.
 ///
 /// For the full interactive playground visit https://gptmarkdown.com/playground
@@ -35,8 +33,8 @@ class App extends StatelessWidget {
 /// Sample content demonstrating the key features of gpt_markdown.
 ///
 /// The leading `---` block is YAML frontmatter (as found in `agent.md` /
-/// `SKILL.md` files). gpt_markdown parses it out of the body and passes it to
-/// the `frontmatterBuilder` below instead of rendering it as markdown.
+/// `SKILL.md` files). gpt_markdown parses it out of the body and, by default,
+/// renders it as a table above the content.
 const _markdown = r'''
 ---
 name: GPT Markdown
@@ -120,11 +118,11 @@ class ExamplePage extends StatelessWidget {
       appBar: AppBar(title: const Text('gpt_markdown')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        // No frontmatterBuilder is passed, so the leading YAML frontmatter is
+        // rendered with the built-in GptMarkdownFrontmatterTable.
         child: GptMarkdown(
           _markdown,
           onLinkTap: (url, title) => debugPrint('Link tapped: $url'),
-          frontmatterBuilder: (context, frontmatter) =>
-              FrontmatterCard(frontmatter: frontmatter),
         ),
       ),
     );

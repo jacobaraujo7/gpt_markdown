@@ -66,7 +66,8 @@ typedef HighlightBuilder =
 ///
 /// When the markdown begins with a `---` fenced frontmatter block it is parsed
 /// and removed from the rendered body. If a builder is supplied, its output is
-/// rendered above the body; otherwise the frontmatter is hidden.
+/// rendered above the body; otherwise a default [GptMarkdownFrontmatterTable]
+/// is shown.
 typedef FrontmatterBuilder =
     Widget Function(
       BuildContext context,

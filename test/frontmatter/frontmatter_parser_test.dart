@@ -264,4 +264,33 @@ count: 7
       expect(fm!.raw, 'a: 1\nb: 2');
     });
   });
+
+  group('GptMarkdownFrontmatter realistic agent.md', () {
+    test('parses values with punctuation, quotes and em dashes', () {
+      const src = '''
+---
+name: backend-scout
+description: Scout read-only do backend .NET (BackOfficeHub). Use para localizar código — endpoints, handlers — e responder "onde está X?", "quem chama Y?". Não edita arquivos; retorna paths.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+
+Você é um agente scout.
+''';
+      final result = GptMarkdownFrontmatter.split(src);
+      final fm = result.frontmatter;
+      expect(fm, isNotNull);
+      expect(fm!.keys.toList(), ['name', 'description', 'tools', 'model']);
+      expect(fm['name'], 'backend-scout');
+      expect(fm['model'], 'sonnet');
+      // Comma-separated (non-flow) values stay as a single string.
+      expect(fm['tools'], 'Read, Grep, Glob, Bash');
+      expect(
+        fm.string('description'),
+        startsWith('Scout read-only do backend .NET (BackOfficeHub).'),
+      );
+      expect(fm.string('description'), contains('"onde está X?"'));
+      expect(result.body.trim(), 'Você é um agente scout.');
+    });
+  });
 }
