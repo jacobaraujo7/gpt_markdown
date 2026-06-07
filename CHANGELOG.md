@@ -1,3 +1,7 @@
+## 1.2.2
+
+* Fixed the frontmatter table so the colored key cells fill the full row height. Previously, when a value (e.g. a long `description`) wrapped onto several lines, the key cell's background only covered the text line instead of the whole cell.
+
 ## 1.2.1
 
 * Frontmatter is now **rendered as a table by default**. When a document has frontmatter and no `frontmatterBuilder` is supplied, `GptMarkdown` shows the parsed metadata as a `key | value` table (the new public `GptMarkdownFrontmatterTable` widget) above the body — similar to how editors display `agent.md` / `SKILL.md` metadata. Previously it was hidden unless a builder was provided.

@@ -458,11 +458,22 @@ class GptMarkdownFrontmatterTable extends StatelessWidget {
   }
 
   Widget _cell(String text, TextStyle textStyle, {Color? background}) {
-    return Container(
+    final content = Container(
       color: background,
+      alignment: background != null ? Alignment.centerLeft : null,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Text(text, style: textStyle),
     );
+    // Colored (key) cells must stretch to the full row height so the
+    // background fills the whole cell — not just the text line when the value
+    // in the same row wraps onto several lines.
+    if (background != null) {
+      return TableCell(
+        verticalAlignment: TableCellVerticalAlignment.fill,
+        child: content,
+      );
+    }
+    return content;
   }
 
   static String _stringify(dynamic value) {

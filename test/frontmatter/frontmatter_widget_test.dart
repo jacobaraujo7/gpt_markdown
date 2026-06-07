@@ -41,6 +41,20 @@ void main() {
       expect(find.textContaining('Body paragraph.'), findsOneWidget);
     });
 
+    testWidgets('key cells stretch to fill the row height', (tester) async {
+      await _pump(tester, GptMarkdown(_agentMd));
+      // The colored key cells use fill alignment so their background covers the
+      // whole cell even when the value wraps onto several lines.
+      final keyCells = tester.widgetList<TableCell>(find.byType(TableCell));
+      expect(keyCells, isNotEmpty);
+      expect(
+        keyCells.every(
+          (c) => c.verticalAlignment == TableCellVerticalAlignment.fill,
+        ),
+        isTrue,
+      );
+    });
+
     testWidgets('does not re-render frontmatter in the markdown body', (
       tester,
     ) async {
