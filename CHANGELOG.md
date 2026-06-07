@@ -1,3 +1,11 @@
+## 1.2.0
+
+* Added **YAML frontmatter** support. A document beginning with a `---` fenced block is now parsed as frontmatter and removed from the rendered body instead of being rendered as a stray horizontal rule plus raw text.
+* Added `GptMarkdownFrontmatter`, a dependency-free parser for the common YAML subset used in frontmatter (scalars with `int`/`double`/`bool`/`null` coercion, quoted strings, nested mappings, block & flow sequences, flow mappings, block scalars `|`/`>`, and `#` comments). Use `GptMarkdownFrontmatter.parse` / `GptMarkdownFrontmatter.split` to read metadata without rendering.
+* Added the `frontmatterBuilder` parameter to `GptMarkdown` (and the `FrontmatterBuilder` typedef) to render the parsed frontmatter above the body. When omitted, frontmatter is hidden.
+* Updated the example app and playground with an `agent.md`-style sample, a reusable `FrontmatterCard` widget, and a standalone `example/agent.md`.
+* Documented frontmatter in the README and added tests for the parser and widget integration.
+
 ## 1.1.7
 
 * Added/updated the interactive playground and pub.dev example flow, with `playground.dart` as a dedicated playground entry and improved demo content for links, lists, blockquotes, tables, and LaTeX.

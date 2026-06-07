@@ -62,6 +62,17 @@ typedef TableBuilder =
 typedef HighlightBuilder =
     Widget Function(BuildContext context, String text, TextStyle style);
 
+/// A builder function for the document [GptMarkdownFrontmatter].
+///
+/// When the markdown begins with a `---` fenced frontmatter block it is parsed
+/// and removed from the rendered body. If a builder is supplied, its output is
+/// rendered above the body; otherwise the frontmatter is hidden.
+typedef FrontmatterBuilder =
+    Widget Function(
+      BuildContext context,
+      GptMarkdownFrontmatter frontmatter,
+    );
+
 /// A builder function for the image.
 ///
 /// [width] and [height] come from the image alt text when parsed as `WxH`

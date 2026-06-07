@@ -17,6 +17,7 @@ import 'custom_widgets/link_button.dart';
 part 'theme.dart';
 part 'markdown_component.dart';
 part 'md_widget.dart';
+part 'frontmatter.dart';
 
 /// This widget create a full markdown widget as a column view.
 class GptMarkdown extends StatelessWidget {
@@ -44,6 +45,7 @@ class GptMarkdown extends StatelessWidget {
     this.components,
     this.inlineComponents,
     this.useDollarSignsForLatex = false,
+    this.frontmatterBuilder,
   });
 
   /// The direction of the text.
@@ -100,6 +102,23 @@ class GptMarkdown extends StatelessWidget {
 
   /// Whether to use dollar signs for LaTeX.
   final bool useDollarSignsForLatex;
+
+  /// Builder for the document's YAML frontmatter.
+  ///
+  /// When the markdown starts with a `---` fenced frontmatter block, it is
+  /// parsed with [GptMarkdownFrontmatter] and removed from the rendered body.
+  /// If [frontmatterBuilder] is provided, its widget is shown above the body;
+  /// otherwise the frontmatter is hidden.
+  ///
+  /// ```dart
+  /// GptMarkdown(
+  ///   agentMarkdown,
+  ///   frontmatterBuilder: (context, frontmatter) {
+  ///     return Text('Agent: ${frontmatter.string('name')}');
+  ///   },
+  /// )
+  /// ```
+  final FrontmatterBuilder? frontmatterBuilder;
 
   /// The table builder.
   final TableBuilder? tableBuilder;
@@ -161,7 +180,12 @@ class GptMarkdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String tex = data.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
+    String tex = data.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    // Pull the YAML frontmatter (if any) off the top before rendering so it is
+    // not parsed as markdown.
+    final split = GptMarkdownFrontmatter.split(tex);
+    final frontmatter = split.frontmatter;
+    tex = split.body.trim();
     if (useDollarSignsForLatex) {
       tex = tex.replaceAllMapped(
         RegExp(r"(?<!\\)\$\$(.*?)(?<!\\)\$\$", dotAll: true),
@@ -181,7 +205,7 @@ class GptMarkdown extends StatelessWidget {
       }
     }
     // tex = _removeExtraLinesInsideBlockLatex(tex);
-    return ClipRRect(
+    Widget child = ClipRRect(
       child: MdWidget(
         context,
         tex,
@@ -210,5 +234,15 @@ class GptMarkdown extends StatelessWidget {
         ),
       ),
     );
+
+    final frontmatterBuilder = this.frontmatterBuilder;
+    if (frontmatter != null && frontmatterBuilder != null) {
+      child = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [frontmatterBuilder(context, frontmatter), child],
+      );
+    }
+    return child;
   }
 }

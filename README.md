@@ -41,6 +41,7 @@ A Flutter package for rendering rich Markdown and LaTeX in your app — built fo
 | 📱 Selectable | ✅ |
 | 🧩 Custom components | ✅ |  |
 | 📎 Underline | ✅ |  |
+| 📑 YAML Frontmatter | ✅ |  |
 
 ## ✨ Key Features
 
@@ -123,6 +124,77 @@ Render a wide variety of content with full Markdown and LaTeX support, including
 [] Unchecked checkbox
 [x] Checked checkbox
 ```
+
+- YAML frontmatter (e.g. `agent.md` / `SKILL.md` files)
+
+```
+---
+name: code-reviewer
+description: Reviews diffs for bugs.
+tags:
+  - review
+  - quality
+---
+```
+
+---
+
+## 📑 Frontmatter
+
+A document that begins with a `---` fenced block is treated as having **YAML
+frontmatter** — the metadata convention used by static site generators and AI
+agent files such as `agent.md` and `SKILL.md`.
+
+gpt_markdown parses the block, removes it from the rendered body and hands the
+result to your `frontmatterBuilder`. If you don't supply a builder, the
+frontmatter is simply hidden (it is never rendered as broken markdown).
+
+```dart
+GptMarkdown(
+  r'''
+---
+name: code-reviewer
+description: Reviews diffs for bugs and style issues.
+tags:
+  - review
+  - quality
+tools: [Read, Grep, Bash]
+---
+
+# Code Reviewer
+
+Body content here...
+''',
+  frontmatterBuilder: (context, frontmatter) {
+    return Card(
+      child: ListTile(
+        title: Text(frontmatter.string('name') ?? ''),
+        subtitle: Text(frontmatter.string('description') ?? ''),
+        trailing: Text(frontmatter.stringList('tags').join(', ')),
+      ),
+    );
+  },
+)
+```
+
+You can also parse frontmatter on its own — handy when you need the metadata
+outside of rendering:
+
+```dart
+final fm = GptMarkdownFrontmatter.parse(markdown);
+print(fm?['name']);                 // 'code-reviewer'
+print(fm?.stringList('tags'));      // ['review', 'quality']
+
+// Or split it from the body explicitly:
+final result = GptMarkdownFrontmatter.split(markdown);
+print(result.frontmatter?['name']); // 'code-reviewer'
+print(result.body);                 // markdown without the frontmatter
+```
+
+The parser supports the common subset of YAML used in frontmatter: scalars
+(with `int` / `double` / `bool` / `null` coercion), quoted strings, nested
+mappings, block and flow sequences (`[a, b]`), flow mappings (`{x: 1}`), block
+scalars (`|` and `>`) and `#` comments.
 
 - Enable text selection on desktop and web:
 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+
+import 'frontmatter_card.dart';
 // import 'package:gpt_markdown/custom_widgets/selectable_adapter.dart';
 
 void main() {
@@ -138,6 +140,38 @@ def reverse_list(head: ListNode) -> ListNode:
 | Italic | `*text*` | *text* |
 | Code | `` `code` `` | `code` |
 | Strike | `~~text~~` | ~~text~~ |
+''',
+  'Agent.md': r'''---
+name: code-reviewer
+description: Reviews pull request diffs for correctness bugs and style issues.
+model: claude-opus-4-8
+version: 1.2.0
+tags:
+  - review
+  - quality
+  - automation
+tools: [Read, Grep, Bash]
+---
+
+# Code Reviewer
+
+You are a meticulous **code reviewer**. Given a diff, you:
+
+1. Flag correctness bugs first, with a short justification.
+2. Point out reuse and simplification opportunities.
+3. Keep style nits to a minimum and clearly labelled.
+
+> Everything above the first heading is YAML *frontmatter*. gpt_markdown parses
+> it out of the body and hands it to your `frontmatterBuilder`.
+
+```dart
+GptMarkdown(
+  agentMarkdown,
+  frontmatterBuilder: (context, frontmatter) {
+    return Text('Agent: ${frontmatter.string('name')}');
+  },
+)
+```
 ''',
 };
 
@@ -451,6 +485,8 @@ class _PlaygroundPageState extends State<PlaygroundPage> {
                     _controller.text,
                     textDirection: _direction,
                     useDollarSignsForLatex: _useDollarLatex,
+                    frontmatterBuilder: (context, frontmatter) =>
+                        FrontmatterCard(frontmatter: frontmatter),
                     latexBuilder: (context, tex, textStyle, inline) {
                       final widget = Math.tex(
                         tex,
